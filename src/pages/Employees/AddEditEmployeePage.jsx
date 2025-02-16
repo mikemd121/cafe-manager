@@ -1,110 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate,useLocation, useParams } from 'react-router-dom';
-import {  Box,Typography, Button, TextField, RadioGroup, Radio, FormControlLabel, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { fetchAllCafes } from '../../services/api';
-import { useSelector,useDispatch } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Box, Typography, Button, TextField, FormControl, InputLabel, Select, MenuItem, Typography as MuiTypography } from '@mui/material';
+import { fetchAllCafes, saveEmployee } from '../../services/api';
+import { useSelector, useDispatch } from 'react-redux';
 import { clearSelectedEmployee } from '../../redux/slices/employeeSlice';
 
 const AddEditEmployeePage = () => {
-    const { id } = useParams(); // Get employee ID from the URL if in Edit mode
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    // const location = useLocation(); // To access the passed employee data from the state
-    // const employeeFromState = location.state ? location.state.employee : null;
-    const employeeFromState = useSelector((state) => state.employee.selectedEmployee);
+  const { id } = useParams(); // Get employee ID from the URL (Edit mode)
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Get employee data from Redux store if editing an employee
+  const employeeFromState = useSelector((state) => state.employee.selectedEmployee);
 
   const [cafes, setCafes] = useState([]);
-  const [employee, setEmployee] = useState({id:'', name: '', emailAddress: '', phoneNumber: '', gender: '', cafeId: '' });
+  const [employee, setEmployee] = useState({
+    id: '',
+    name: '',
+    emailAddress: '',
+    phoneNumber: '',
+    gender: '',
+    cafeId: '',
+  });
   const [errors, setErrors] = useState({});
 
-
+  // Fetch cafes data and populate the form if editing an existing employee
   useEffect(() => {
     // Fetch cafes list
-      fetchAllCafes().then(data => {
-        setCafes(data);
-      });
+    fetchAllCafes().then(setCafes);
     
     if (employeeFromState) {
-        setEmployee(employeeFromState); // Populate form with existing data
-      }
+      setEmployee(employeeFromState); // Populate form with existing employee data
+    }
+
+    // Cleanup selected employee data on unmount
     return () => {
-      dispatch(clearSelectedEmployee()); // Clear selected cafe on unmount
+      dispatch(clearSelectedEmployee());
     };
-  }, [id,employeeFromState]);
+  }, [employeeFromState, dispatch]);
 
-
-  // const fetchEmployeeData = async (id) => {
-  //   // Fetch employee data from your API (replace with actual API call)
-  //   const response = await fetch(`/api/employees/${id}`);
-  //   const data = await response.json();
-  //   setEmployee(data);
-  // };
-
+  // Validation function for form fields
   const validate = () => {
-    let formErrors = {};
-  
-    // Validate Name: required and must be between 6 and 10 characters.
-    if (!employee.name || employee.name.trim() === '') {
+    const formErrors = {};
+
+    // Name validation (required and between 6 and 10 characters)
+    if (!employee.name.trim()) {
       formErrors.name = 'Name is required.';
     } else if (employee.name.trim().length < 6 || employee.name.trim().length > 10) {
       formErrors.name = 'Name must be between 6 and 10 characters.';
     }
-  
-    // Validate Email Address: required and must contain '@'.
-    if (!employee.emailAddress || employee.emailAddress.trim() === '') {
+
+    // Email validation (required and must contain '@')
+    if (!employee.emailAddress.trim()) {
       formErrors.emailAddress = 'Email address is required.';
     } else if (!employee.emailAddress.includes('@')) {
       formErrors.emailAddress = 'Invalid email address.';
     }
-  
-    // Validate Phone Number: required and must match Singapore phone pattern.
-    if (!employee.phoneNumber || employee.phoneNumber.trim() === '') {
+
+    // Phone validation (required and match Singapore phone pattern)
+    if (!employee.phoneNumber.trim()) {
       formErrors.phoneNumber = 'Phone number is required.';
     } else if (!/^[89]{1}[0-9]{7}$/.test(employee.phoneNumber)) {
       formErrors.phoneNumber = 'Phone number must start with 8 or 9 and have 8 digits.';
     }
-  
-    // Validate Assigned Café: required.
+
+    // Assigned Café validation (required)
     if (!employee.cafeId) {
       formErrors.cafeId = 'Assigned Café is required.';
     }
-  
+
     setErrors(formErrors);
     return Object.keys(formErrors).length === 0;
   };
-  
 
+  // Submit form data (add or edit employee)
   const handleSubmit = () => {
-     if (validate()) {
-      const method = id ? 'PUT' : 'POST';
-      const url = id ? ` https://localhost:44324/api/Employee` : ' https://localhost:44324/api/Employee';
-      const body = id ? { ...employee, id: id,cafeId: employee.cafeId} : {...employee,cafeId: employee.cafeId};
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-        .then((response) => {
-          if (response.ok) {
-            navigate('/employees/:cafeId');
-          }
-        });
-     }
+    if (validate()) {
+      saveEmployee(employee, id).then(() => navigate('/employees/:cafeId'));
+    }
   };
- 
+
   return (
     <Box
       sx={{
-        width: '100%', // full width
-        height: '100vh', // full viewport height
-        boxSizing: 'border-box',
-        overflowX: 'hidden',
+        width: '100%',
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center', // center vertically
-        alignItems: 'center', // center horizontally
+        justifyContent: 'center',
+        alignItems: 'center',
         background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
         p: 2,
+        boxSizing: 'border-box',
       }}
     >
       <Box
@@ -121,6 +108,7 @@ const AddEditEmployeePage = () => {
           {id ? 'Edit Employee' : 'Add Employee'}
         </Typography>
 
+        {/* Employee Name Input */}
         <TextField
           label="Name"
           value={employee.name}
@@ -131,6 +119,7 @@ const AddEditEmployeePage = () => {
           margin="normal"
         />
 
+        {/* Employee Email Input */}
         <TextField
           label="Email"
           value={employee.emailAddress}
@@ -141,6 +130,7 @@ const AddEditEmployeePage = () => {
           margin="normal"
         />
 
+        {/* Employee Phone Number Input */}
         <TextField
           label="Phone Number"
           value={employee.phoneNumber}
@@ -151,6 +141,7 @@ const AddEditEmployeePage = () => {
           margin="normal"
         />
 
+        {/* Gender Select */}
         <FormControl fullWidth margin="normal">
           <InputLabel>Gender</InputLabel>
           <Select
@@ -164,6 +155,7 @@ const AddEditEmployeePage = () => {
           </Select>
         </FormControl>
 
+        {/* Assigned Café Select */}
         <FormControl fullWidth margin="normal">
           <InputLabel>Assigned Café</InputLabel>
           <Select
@@ -179,12 +171,13 @@ const AddEditEmployeePage = () => {
             ))}
           </Select>
           {errors.cafeId && (
-            <Typography variant="caption" color="error">
+            <MuiTypography variant="caption" color="error">
               {errors.cafeId}
-            </Typography>
+            </MuiTypography>
           )}
         </FormControl>
 
+        {/* Form Action Buttons */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
           <Button variant="contained" color="primary" onClick={handleSubmit}>
             Submit

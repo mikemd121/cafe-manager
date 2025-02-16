@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import {Box,Typography, Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { AgGridReact } from 'ag-grid-react';
 import { useNavigate } from 'react-router-dom';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { fetchEmployees, deleteEmployee } from '../../services/api';
 import { ClientSideRowModelModule } from 'ag-grid-community';
+import { useDispatch } from 'react-redux';
 import { setSelectedEmployee } from '../../redux/slices/employeeSlice';
-import {useDispatch } from 'react-redux';
+import styles from './EmployeesPage.module.css'; // Import the CSS Module styles
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([]);
@@ -16,42 +17,29 @@ const EmployeesPage = () => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  // useEffect(() => {
-  //   // Fetch cafes list
-  //   fetchCafes();
-  //   if (employeeFromState) {
-  //       setEmployee(employeeFromState); // Populate form with existing data
-  //     }
-  // }, [id, employeeFromState]);
 
-  // Fetch employees with café filter
-
-
+  // Fetch employees based on café filter
   const handleSearch = () => {
     fetchEmployees(cafeFilter)
-       .then(data => {
-         console.log(data); // Log the fetched data
-         setEmployees(data);
-       })
-       .catch(error => {
-         console.error('Error fetching cafes:', error); // Handle fetch errors
-       });
-   
+      .then(setEmployees)
+      .catch((error) => console.error('Error fetching employees:', error));
   };
 
+  // Edit employee
   const handleEdit = (employee) => {
-    dispatch(setSelectedEmployee(employee));  // Store cafe in Redux
-    // Navigate to the Edit page and pass the employee data via state
+    dispatch(setSelectedEmployee(employee)); // Store employee in Redux
     navigate(`/employees/edit/${employee.id}`);
   };
 
+  // Delete employee
   const handleDelete = () => {
     deleteEmployee(selectedEmployeeId).then(() => {
       setIsDeleteDialogOpen(false);
-      fetchEmployees(cafeFilter).then(data => setEmployees(data)); // Refresh after delete
+      fetchEmployees(cafeFilter).then(setEmployees); // Refresh employee list after deletion
     });
   };
 
+  // Define columns for AgGrid
   const columns = [
     { field: 'id', headerName: 'Employee ID' },
     { field: 'name', headerName: 'Name' },
@@ -64,10 +52,7 @@ const EmployeesPage = () => {
       cellRenderer: (params) => (
         <>
           <Button onClick={() => handleEdit(params.data)}>Edit</Button>
-          <Button 
-            onClick={() => { setSelectedEmployeeId(params.data.id); setIsDeleteDialogOpen(true); }} 
-            color="error"
-          >
+          <Button onClick={() => { setSelectedEmployeeId(params.data.id); setIsDeleteDialogOpen(true); }} color="error">
             Delete
           </Button>
         </>
@@ -76,40 +61,22 @@ const EmployeesPage = () => {
   ];
 
   return (
-    <Box
-      sx={{
-        width: '100%',            // Use 100% width of the parent container (viewport)
-        height: '100vh',          // Full viewport height
-        boxSizing: 'border-box',
-        overflowX: 'hidden',      // Prevent horizontal scrolling
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-        p: 2,
-      }}
-    >
+    <Box className={styles.container}>
       {/* Header */}
       <Typography variant="h3" align="center" color="white" gutterBottom>
         Employees Manager
       </Typography>
 
       {/* Search and Actions */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          mb: 2,
-        }}
-      >
+      <Box className={styles.searchBox}>
         <TextField
           label="Filter by Café"
           value={cafeFilter}
           onChange={(e) => setCafeFilter(e.target.value)}
-          sx={{ backgroundColor: 'white', borderRadius: 1, mr: 1, mb: { xs: 1, sm: 0 } }}
+          className={styles.textField}
         />
-        <Box>
-          <Button onClick={handleSearch} variant="contained" color="primary" sx={{ mr: 1 }}>
+        <Box className={styles.buttonContainer}>
+          <Button onClick={handleSearch} variant="contained" color="primary" className={styles.button}>
             Search
           </Button>
           <Button onClick={() => navigate("/employees/add")} variant="contained" color="secondary">
@@ -118,18 +85,8 @@ const EmployeesPage = () => {
         </Box>
       </Box>
 
-      {/* AG Grid Container fills remaining space */}
-      <Box
-        className="ag-theme-alpine"
-        sx={{
-          flex: 1,
-          width: '100%',
-          backgroundColor: 'white',
-          borderRadius: 1,
-          p: 1,
-          overflow: 'auto',
-        }}
-      >
+      {/* AG Grid */}
+      <Box className={styles.gridBox}>
         <AgGridReact
           rowData={employees}
           columnDefs={columns}
