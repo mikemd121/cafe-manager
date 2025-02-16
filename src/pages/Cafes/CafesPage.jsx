@@ -14,14 +14,16 @@ const CafesPage = () => {
   const [filter, setFilter] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCafeId, setSelectedCafeId] = useState(null);
+  const [deleteStatus, SetDeleteStatus] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   useEffect(() => {
     fetchAllCafes()
-      .then(setCafes)
+      .then((setCafes))
       .catch((error) => console.error('Error fetching cafes:', error));
-  }, []);
+
+  }, [deleteStatus]);
 
   // Handle search
   const handleSearch = () => {
@@ -40,10 +42,8 @@ const CafesPage = () => {
     deleteCafe(selectedCafeId)
       .then(() => {
         setIsDeleteDialogOpen(false);
-        return fetchCafes(filter); // Refetch cafes after deletion
+        SetDeleteStatus(true)
       })
-      .then(setCafes)
-      .catch((error) => console.error('Error deleting cafe:', error));
   };
 
   // Define columns for AgGrid
@@ -53,8 +53,8 @@ const CafesPage = () => {
       headerName: 'Logo',
       cellRenderer: (params) => {
         const logo = params.value;
-        return logo ? <img src={logo.startsWith('http') ? logo : `/path/to/logos/${logo}`} alt="Logo" width={50} /> : <span>No Logo</span>;
-      },
+        return logo ? <img src={`data:image/png;base64,${logo}`} alt="Logo" width={50} /> : <span>No Logo</span>;
+    },
     },
     {
       field: 'name',

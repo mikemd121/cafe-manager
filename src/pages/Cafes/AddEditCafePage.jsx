@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, TextField, Box, Typography } from '@mui/material';
+import { Button, TextField, Box, Typography,FormControl  } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchCafe, saveCafe } from '../../services/api';
 import { clearSelectedCafe } from '../../redux/slices/cafeSlice';
@@ -12,7 +12,7 @@ const AddEditCafePage = () => {
 
   const cafeFromState = useSelector((state) => state.cafe.selectedCafe);
   
-  const [cafe, setCafe] = useState({ name: '', description: '', logo: '', location: '' });
+  const [cafe, setCafe] = useState({ name: '', description: '', logo: null, location: '' });
   const [errors, setErrors] = useState({});
 
   // Populate form with existing cafe data (if available) on component mount
@@ -120,17 +120,17 @@ const AddEditCafePage = () => {
         />
 
         {/* Logo Upload */}
-        <Box component="div" sx={{ my: 2 }}>
+          <FormControl fullWidth sx={{ my: 2 }}>
           <input
             type="file"
             onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                setCafe({ ...cafe, logo: e.target.files[0] });
+              if (e.target.files?.[0]) {
+                setCafe((prev) => ({ ...prev, logo: e.target.files[0] }));
               }
             }}
           />
           {errors.logo && <Typography variant="caption" color="error">{errors.logo}</Typography>}
-        </Box>
+        </FormControl>
 
         {/* Location Input */}
         <TextField
